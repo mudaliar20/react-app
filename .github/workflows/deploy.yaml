@@ -1,0 +1,43 @@
+name: Build and Deploy React App to Windows Nginx Server
+
+on:
+  push:
+    branches:
+      - main  # Trigger when code is pushed to the main branch
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Install Dependencies
+      run: npm install
+
+    - name: Build the React App
+      run: npm run build
+
+    - name: Deploy via SCP to Windows Server
+      uses: appleboy/scp-action@v0.1.5
+      with:
+        host: 3.110.40.151
+        username: Administrator
+        key: ${{ secrets.WIN_SERVER_SSH_KEY }}
+        source: "build/*"
+        target: "C:/Users/Administrator/Downloads/nginx-1.28.0/nginx-1.28.0/html"
+
+    - name: Reload Nginx
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: 3.110.40.151
+        username: Administrator
+        key: ${{ secrets.WIN_SERVER_SSH_KEY }}
+        script: |
+          nginx -s reload
